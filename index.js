@@ -182,6 +182,15 @@ bot.on('document', async (ctx) => {
                 };
             });
 
+            // Фильтруем товары с ненулевой себестоимостью и пустые значения
+            const validProducts = updatedData.filter(item => item.price > 0 && item.price !== null);
+
+            // Отфильтровываем товары с нулевой или пустой себестоимостью
+            const invalidProducts = updatedData.filter(item => item.price === 0 || item.price === null);
+
+            // Объединяем: сначала идут товары с себестоимостью, затем без
+            const finalResult = [...validProducts, ...invalidProducts];
+
             const headers = [
                 "Наименование товара", 
                 "Выгода", 
@@ -193,11 +202,11 @@ bot.on('document', async (ctx) => {
                 "Суммарная выгода"
             ];
             
-            const dataForXLSX = updatedData.map((item, index) => [
+            const dataForXLSX = finalResult.map((item, index) => [
                 item.product,
-                null,
+                (item.price > 0 && item.price !== null) ? null : 'Нет себестоимости', // Выгода (формула будет добавлена ниже для тех, у кого есть себестоимость)
                 item.sumoper,
-                item.price,
+                item.price || 0,
                 item.comm,
                 item.kaspicomm,
                 item.delivery || 0,
@@ -209,7 +218,7 @@ bot.on('document', async (ctx) => {
             const workbookNew = xlsx.utils.book_new();
             const worksheetNew = xlsx.utils.aoa_to_sheet(dataForXLSX);
             
-            updatedData.forEach((item, idx) => {
+            validProducts.forEach((item, idx) => {
                 const rowIndex = idx + 2;
                 worksheetNew[`B${rowIndex}`] = {
                     f: `C${rowIndex}+E${rowIndex}+F${rowIndex}+G${rowIndex}-D${rowIndex}`
