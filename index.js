@@ -5,6 +5,24 @@ import fs from 'fs';
 import fetch from 'node-fetch';
 import dotenv from 'dotenv';
 
+const dev = true;
+/**
+ * log for dev
+ */
+const _log = (msg, type) => {
+    if (dev) {
+        switch (type) {
+            case 'error':
+                console.error(msg);
+                break;
+            default:
+                console.log(msg);
+                break;
+        }
+    }
+}
+
+
 dotenv.config()
 
 const app = express();
@@ -44,7 +62,7 @@ bot.on('text', (ctx) => {
 
 // Обработка ошибок
 bot.catch((err, ctx) => {
-    console.error(`Ошибка в обработке апдейта для ${ctx.updateType}`, err);
+    _log(`Ошибка в обработке апдейта для ${ctx.updateType}\n${err}`, 'error');
     ctx.reply('Произошла ошибка. Попробуйте еще раз.');
 });
 
@@ -106,8 +124,9 @@ bot.on('document', async (ctx) => {
                     if (item.length !== 2) {
                         return false;
                     }
-                    // Проверяем, что первый элемент - это строка, а второй - число
-                    if (typeof item[0] !== 'string' || typeof item[1] !== 'number') {
+                    // Проверяем, что второй элемент - число
+                    if (typeof item[1] !== 'number') {
+                        _log(item)
                         return false;
                     }
                 }
@@ -116,7 +135,7 @@ bot.on('document', async (ctx) => {
             };
 
             if (!validateProductPrices(productPrices)) {
-                console.error('Ошибка: productPrices не соответствует ожидаемому формату.');
+                _log('Ошибка: productPrices не соответствует ожидаемому формату.');
 
                 await ctx.reply('Таблицу которую вы скинули фуфло, скинь таблицу где данные начиная с A2+ являются названиями товаров (названия должны быть идентичны названиям из kaspi таблицы), а столбец B2+ только числа');
                 session.waitingForPrices = false;
@@ -268,7 +287,7 @@ bot.on('document', async (ctx) => {
             session.waitingForCount = false;
         }
     } catch (error) {
-        console.error('Ошибка обработки документа:', error);
+        _log(`Ошибка обработки документа:\n ${error}`, 'error');
         ctx.reply('Произошла ошибка при обработке вашего файла. Убедитесь, что он соответствует требованиям и попробуйте снова. \nПосле этого сообщения используйте команды из меню заново');
         session.waitingForCount = false;
         session.waitingForPrices = false;
@@ -280,5 +299,5 @@ bot.launch();
 // Запуск сервера
 const PORT = process.env.PORT;
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    _log(`Server is running on port ${PORT}`);
 });
