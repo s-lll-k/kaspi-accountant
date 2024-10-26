@@ -180,7 +180,8 @@ bot.on('document', async (ctx) => {
                     comm: row[20] || 0,
                     kaspicomm: row[26] || 0,
                     delivery: row[29] || 0,
-                    product: row[31] || ''
+                    product: row[31] || '',
+                    operation: row[12]
                 };
             });
 
@@ -201,11 +202,13 @@ bot.on('document', async (ctx) => {
                 };
             });
 
+            const buyOnlyProducts = updatedData.filter(item => item.operation !== 'Возврат');
+
             // Фильтруем товары с ненулевой себестоимостью и пустые значения
-            const validProducts = updatedData.filter(item => item.price > 0 && item.price !== null);
+            const validProducts = buyOnlyProducts.filter(item => item.price > 0 && item.price !== null);
 
             // Отфильтровываем товары с нулевой или пустой себестоимостью
-            const invalidProducts = updatedData.filter(item => item.price === 0 || item.price === null);
+            const invalidProducts = buyOnlyProducts.filter(item => item.price === 0 || item.price === null);
 
             // Объединяем: сначала идут товары с себестоимостью, затем без
             const finalResult = [...validProducts, ...invalidProducts];
@@ -218,6 +221,7 @@ bot.on('document', async (ctx) => {
                 "Коммиссия", 
                 "Коммиссия каспи", 
                 "Доставка",
+                "Тип операции",
                 "Суммарная выгода"
             ];
             
@@ -229,7 +233,7 @@ bot.on('document', async (ctx) => {
                 item.comm,
                 item.kaspicomm,
                 item.delivery || 0,
-                null
+                item.operation
             ]);
             
             dataForXLSX.unshift(headers);
@@ -246,7 +250,7 @@ bot.on('document', async (ctx) => {
 
             const totalRowIndex = dataForXLSX.length + 2;
 
-            worksheetNew[`H2`] = {
+            worksheetNew[`I2`] = {
                 f: `SUM(B2:B${totalRowIndex - 1})`
             };
 
